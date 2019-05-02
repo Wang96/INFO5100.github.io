@@ -1,0 +1,503 @@
+<html>
+<head>
+<title>Project2</title>
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/topojson.v2.min.js"></script>
+<!-- <link rel="stylesheet" href="./style.css"> -->
+<style>
+
+    svg {
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.694vw;
+    margin: auto;
+    }
+
+    body{
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.694vw;
+    margin: auto;
+    }
+
+    #majorlabel{
+      font-family: "Montserrat", sans-serif;
+      font-size: 12px;
+      margin-right: 10px;
+      color: grey;
+    }
+
+    .x path{
+       stroke: rgb(109, 167, 233);
+       opacity: 0.75;
+     }
+
+     .x line{
+         stroke:rgb(109, 167, 233);
+         opacity: 0.75;
+       }
+
+     .x text{
+        font-family: "Montserrat", sans-serif;
+         font-size: 12px;
+         color:rgb(109, 167, 233);
+         opacity: 0.75;
+     }
+
+     .y path{
+        stroke: rgb(109, 167, 233);
+        opacity: 0.75;
+      }
+
+      .y line{
+          stroke:rgb(109, 167, 233);
+          opacity: 0.75;
+        }
+
+      .y text{
+        font-family: "Montserrat", sans-serif;
+          font-size: 12px;
+          color:rgb(109, 167, 233);
+          opacity: 0.75;
+      }
+      #linechart{
+        position:absolute;
+        top:30px;
+        right:30px;
+      }
+      #piechart{
+        position:absolute;
+        top:425px;
+        right:200px;
+      }
+      #legend{
+        position:absolute;
+        top:400px;
+        right:0px;
+      }
+</style>
+</head>
+<body>
+  <h1>Predict your Life</h1>
+  <h2>See how people like you live</h2>
+
+<div class = "selections">
+
+  <select id="age">
+    <option value="">Age</option>
+    <option value="15">15</option>
+    <option value="16">16</option>
+    <option value="17">17</option>
+    <option value="18">18</option>
+    <option value="19">19</option>
+    <option value="20">20</option>
+    <option value="21">21</option>
+    <option value="22">22</option>
+    <option value="23">23</option>
+    <option value="24">24</option>
+    <option value="25">25</option>
+    <option value="26">26</option>
+    <option value="27">27</option>
+    <option value="28">28</option>
+    <option value="29">29</option>
+    <option value="30">30</option>
+  </select>
+
+  <select id="gender">
+    <option value="">Gender</option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+  </select>
+
+  <div id = "majordropdown">
+      <div id = "majorlabel">Select Your Undergraduate Major
+      </div>
+    </div>
+
+</div>
+  <div>
+    <svg id ="Chart"></svg>
+  </div>
+<div class = "chart">
+  <svg id = "piechart" height = 350 width = 350 style = "background: white">
+  </svg>
+  <svg id = "legend" height = 200 width = 200>
+  </svg>
+</div>
+<svg id="linechart" height=360 width=680></svg>
+
+<script>
+
+  /************************** Major Line Graph ******************************/
+
+
+  d3.dsv(",","major-salaries.csv",function(d) {
+         return {
+           major: d.major,
+           values: [+d.percentile10, +d.percentile25, +d.median, +d.percentile75, +d.percentile90]
+         };
+       })
+       .then(function(data) {
+         let Salaries = data
+         console.log(Salaries);
+
+         var percents = [0.1, 0.25, 0.5, 0.25, 0.1];
+
+           let axis = d3.select("svg#linechart");
+           let width = axis.attr("width");
+           let height = axis.attr("height");
+           let margin = { "top": 20, "right": 40, "bottom": 50, "left":70};
+           let chartWidth = width - margin.left - margin.right;
+           let chartHeight = height - margin.top - margin.bottom;
+           var xScale=d3.scaleLinear().domain([0,250000]).range([0,chartWidth]);
+           var yScale=d3.scaleLinear().domain([0.1,0.6]).range([chartHeight,0]);
+           var x = d3.scaleLinear().range([0, chartWidth]);
+           var y = d3.scaleLinear().range([chartHeight, 0]);
+           let leftAxis = d3.axisLeft(yScale).ticks(5).tickFormat(d3.format(".0%"));
+
+
+
+           // Y axis
+           axis.append("g").attr("class", "y axis")
+           .attr("transform","translate("+ margin.left +","+ margin.top +")")
+           .call(leftAxis);
+
+           // X axis
+            let bottomAxis = d3.axisBottom(xScale).ticks(5).tickFormat(function(d) { return "$" + d3.format(",")(d) } ); // Making simpler ticks without the e
+            // Check out http://bl.ocks.org/zanarmstrong/05c1e95bf7aa16c4768
+            let element = axis.append("g").attr("class", "x axis")
+            .attr("transform","translate("+ margin.left +","+ (margin.top + chartHeight ) +")");
+            bottomAxis(element); // Same as .call
+
+            axis.append("text")
+            .attr("transform",
+            "translate("+width/2+","+(chartHeight+margin.top+40)+")")
+            .style("text-anchor", "middle")
+            .text("Salary")
+            .style("font-size", 14)
+            .style("fill", "black")
+            // .style("opacity",0.75);
+
+            axis.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", margin.left - 50)
+            .attr("x",0 - (height / 2))
+            .text("Percentage")
+            .style("font-size", 14)
+            .style("fill", "black")
+            // .style("opacity",0.75);
+
+            var majordrop = d3.select("#majordropdown")
+
+            majordrop.append("select").selectAll("option").attr('class','select')
+                .data(Salaries)
+                .attr("id", "majordrop")
+                .enter()
+                .append("option")
+                .attr("value", function(d){
+                    return d.major;
+                })
+                .text(function(d){
+                    return d.major;
+            });
+
+            var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+            // Source : https://bl.ocks.org/ProQuestionAsker/8382f70af7f4a7355827c6dc4ee8817d
+            //Source : http://next.plnkr.co/edit/qW77DpbScddXraajNFet?p=preview&preview
+
+            var updateGraph = function(major){
+              var selectMajor = Salaries.filter(function(d){
+                              return d.major == major;
+                            })
+                console.log(selectMajor);
+                var selectValues = selectMajor[0]["values"];
+                var format= d3.format(",")
+                var median = d3.median(selectValues);
+                var medianComma = format(d3.median(selectValues));
+                var medianX = xScale(median);
+
+                console.log(medianX)
+                var percenty = yScale(0.50);
+
+                var line = d3.line()
+                 .x(function(d,i) { return xScale(d); })
+                 .y(function(d,i) { return yScale(percents[i]); })
+                 .curve(d3.curveStepBefore)
+                 .curve(d3.curveCatmullRom.alpha(1));
+
+
+
+
+                var g = axis.append("g").attr("class", "linedots");
+
+                var next = g.append("path")
+                .data(selectMajor)
+                  .attr("class", "line")
+                  .attr("d", function(d) {
+                    return line(d.values);
+                  })
+                  .style("stroke", function(d,i) {
+                    return color(i);
+                  })
+                  .style("stroke-width", 2)
+                  .attr("fill","none")
+                  .attr("transform","translate("+margin.left+","+margin.top+")");
+
+                function randomColor() {
+                  return "hsl(" + Math.random() * 360 + ",40%,50%)";
+                }
+
+
+                  d3.selectAll(".line")
+                  .style("stroke", randomColor)
+                  .transition()
+                  .duration(2000);
+
+                  d3.selectAll(".line")
+                  .style("fill", "rgba(255, 255, 255, 0.10)")
+                  .transition()
+                  .duration(2000);
+
+                  var focus = g.append("g")
+                     .attr("class", "focus")
+
+                 focus.append("line")
+                     .attr("class", "hover-line")
+                     .attr("y1", yScale(0.10))
+                     .attr("y2", percenty)
+                     .attr("x1", xScale(median))
+                     .attr("x2", xScale(median))
+                     .style("stroke", "grey")
+                     .attr("transform","translate("+margin.left+","+margin.top+")");
+
+                focus.append("text")
+                .attr("class", "mediantext")
+                .attr("x", xScale(median)-15)
+                .attr("y", percenty - 20)
+                .text("Median Mid-Career Salary:")
+                .attr("fill","black")
+                .attr("font-size",14)
+
+                focus.append("text")
+                .attr("class", "median")
+                .attr("x", xScale(median)+28)
+                .attr("y", percenty+ 10)
+                .text("$" + medianComma)
+                .attr("fill","black")
+                .attr("font-size",22)
+
+               };
+
+            majordrop.on('change',function(d,i){
+            var clear = d3.select(".line").remove();
+            var clear2 = d3.select(".hover-line").remove();
+            var clear3 = d3.select(".median").remove();
+            var clear4 = d3.select(".mediantext").remove();
+            var selectedMajor = d3.select(this)
+                        .select("select")
+                        .property("value");
+                  updateGraph(selectedMajor);
+            });
+
+                   });
+/************************ Pie Charts ************************************/
+
+    const requestData = async () => {
+      // Drawing basic us map
+      const pie = await d3.json("./dataset/pie.json");
+
+      var major = 'Computer Science';
+      var age = '18';
+      var gender = 'female';
+
+      // var majorselector = document.getElementById('major');
+      // majorselector.addEventListener("change", function(){
+      //   major = majorselector[majorselector.selectedIndex].value;
+      // });
+
+      var ageselector = document.getElementById('age');
+      ageselector.addEventListener("change", function(){
+        age = ageselector[ageselector.selectedIndex].value;
+        if(gender == ''){
+          let tmpkey1 = age + " " + "female";
+          let tmpkey2 = age + " " + "male";
+          let female = pie[tmpkey1]["romantic"];
+          let male = pie[tmpkey2]["romantic"];
+          let tmpdata = []
+          for(let i  = 0; i < female.length; i++){
+            let v = (female[i].value + male[i].value) / 2;
+            tmpdata.push({"category": female[i].category, "value": v});
+          }
+          createPieChart(tmpdata, "romantic");
+        }
+        else{
+          let tmpkey = age + " " + gender;
+          createPieChart(pie[tmpkey]["romantic"], "romantic");
+        }
+      });
+
+      var genderselector = document.getElementById('gender');
+      genderselector.addEventListener("change", function(){
+        gender = genderselector[genderselector.selectedIndex].value;
+        let tmpkey = age + " " + gender;
+        createPieChart(pie[tmpkey]["romantic"], "romantic");
+      });
+
+
+      // Creat pie chart of energy breakdown for selected state
+
+      var color = d3.scaleOrdinal(d3.schemePastel1);
+      var catmapping = {'1': "one", '2': "two", '3': "three", '4': "four", '5': "five"};
+
+      function createPieChart(data, type){
+        var tmp = {}
+
+        d3.select('#piechart').selectAll('g').remove();
+
+
+        d3.select('#piechart').selectAll('g').remove();
+        data.forEach( d => {
+          tmp[d.category] = d.value;
+        })
+
+        var svg = d3.select("#piechart");
+        var width = svg.attr("width");
+        var height = svg.attr("height");
+        var radius = Math.min(width, height) / 2;
+        var pie = d3.pie().value(function(d) {return d.value})(data);
+        var arc = d3.arc().outerRadius(radius-10).innerRadius(100);
+        var labelArc = d3.arc().outerRadius(radius-40).innerRadius(radius-40);
+        var chart = svg.append("g").attr("transform", "translate("+width/2+","+height/2+")");
+        var g = chart.selectAll("arc").data(pie).enter().append("g").attr("class","arc").attr("note", d => d.data.category);
+        g.append("path").attr("d",arc).style("fill", function(d) {return color(d.data.category);});
+        g.append("text").text(type).style("text-anchor", "middle").style("fill","black").style("font-size",25);
+        d3.select("#piechart").selectAll("g").selectAll(".arc")
+          .on("mouseover", function(){
+            let category = d3.select(this).attr("note");
+            d3.select("#piechart").append("text")
+              .attr("id", catmapping[category])
+              .attr("x", 135)
+              .attr("y", 25)
+              .text(category)
+              .style("fill", "black");
+
+            d3.select("#piechart").append("text")
+              .attr("id", "category_value")
+              .attr("x", 135)
+              .attr("y", 45)
+              .text((tmp[category]*100).toFixed(2) + '%')
+              .style("fill", "black");
+
+            d3.select(this).style("opacity",0.5);
+          })
+          .on("mouseout", function(){
+            let category = d3.select(this).attr("note");
+            d3.select(this).style("opacity",1);
+            d3.select("#" + catmapping[category]).remove();
+            d3.select("#category_value").remove();
+          });
+      }
+      createPieChart(pie["20 female"]["romantic"], "romantic");
+
+      var legend = d3.select("#legend")
+      for(let i = 0; i < pie["20 female"]["romantic"].length; i++){
+        legend.append("rect")
+              .attr("x", 20)
+              .attr("y", 20+i*30)
+              .attr("width", 25)
+              .attr("height", 25)
+              .style("fill", color(pie["20 female"]["romantic"][i].category));
+        legend.append("text")
+              .attr("x", 60)
+              .attr("y", i*30+40)
+              .attr("height", 25)
+              .text(pie["20 female"]["romantic"][i].category)
+              .style("fill", "black");
+              //.style("font-weight", "bold");
+      }
+
+    }
+
+    requestData();
+    /************/
+  var width = 975;
+  var height = width;
+  var innerRadius = 300;
+  var outerRadius = Math.min(width, height) / 2;
+  var analysis = [];
+  Promise.all([d3.json("./dataset/response.json",d3.autoType),d3.json("./dataset/major.json",d3.autoType)]).then(function (data){
+    console.log(data[0]);//48
+    for(let key in data[0])
+    {
+      if (key == '16 male'){
+        for (let subkey in data[0][key])
+            for (let subtitle in data[0][key][subkey])  
+            analysis.push({
+              "Category": subtitle,
+              "Number": data[0][key][subkey][subtitle]
+            });
+      }
+    }
+    arc = d3.arc()
+             .innerRadius(d => y(0))
+            // .outerRadius(d => y(d.Number))
+            .startAngle(d => x(d.Category))
+            .endAngle(d => x(d.Category) + x.bandwidth())
+            .padAngle(0.01)
+            .padRadius(innerRadius)
+    x = d3.scaleBand()
+          .domain(analysis.map(d => d.Category))
+          .range([0, 2 * Math.PI])
+          .align(0)
+    console.log(x('cars'));
+    y = function(d){
+        const y = d3.scaleLinear()
+                    .domain([0, d3.max(analysis, d => d.Number)])
+                    .range([innerRadius * innerRadius, outerRadius * outerRadius]);
+        return Math.sqrt(y(d));
+    }
+    z = d3.scaleOrdinal()
+          .domain(analysis.map(d => d.Category))
+          .range(["#98abc5","#98abc5","#98abc5","#98abc5","#98abc5","#98abc5","#98abc5","#98abc5","#98abc5","#98abc5", "#8a89a6","#8a89a6","#8a89a6","#8a89a6","#8a89a6","#8a89a6","#8a89a6","#8a89a6","#8a89a6","#8a89a6", "#7b6888","#7b6888","#7b6888","#7b6888","#7b6888","#7b6888","#7b6888","#7b6888","#7b6888","#7b6888", "#6b486b","#6b486b","#6b486b","#6b486b","#6b486b","#6b486b","#6b486b","#6b486b","#6b486b","#6b486b", "#a05d56", "#d0743c","#d0743c","#d0743c","#d0743c","#d0743c","#d0743c","#d0743c"])
+    console.log(z("cars"));
+    var svg2 = d3.select("#Chart")
+                .attr("viewBox", `${-width / 2} ${-height / 2} ${width} ${height}`)
+                .style("width", "60%")
+                .style("height", "auto")
+    seg = svg2.selectAll("path")
+    .data(analysis)
+    .enter().append("path")
+    .each(function(d) { d.outerRadius = y(0); })
+    .attr("d", arc)
+    .attr("fill", d => z(d.Category));
+
+    seg.transition().ease(d3.easeElastic).duration(1500).delay(function(d,i) {return (48-i)*90;})
+          .attrTween("d", function(d,index) {
+            var i = d3.interpolate(d.outerRadius, y(d.Number));
+            return function(t) { d.outerRadius = i(t); return arc(d); };
+          });
+
+    xAxis = g => g
+    .attr("text-anchor", "end")
+    .attr("dominant-baseline","central")
+    .call(g => g.selectAll("g")
+    .data(analysis)
+    .enter().append("g")
+    .style("fill","#FFFFFF")
+    .attr("transform", d => `rotate(${((x(d.Category) + x.bandwidth() / 2) * 180 / Math.PI - 90)}) translate(${innerRadius+4},0) rotate(90)`)
+    .call(g => g.append("text")
+    .attr("transform", d =>  "rotate(90) translate(0,0)")
+          .text(d => d.Category))) 
+
+    svg2.append("g")
+        .call(xAxis);
+  });
+
+
+
+
+
+</script>
+
+</body>
+</html>
